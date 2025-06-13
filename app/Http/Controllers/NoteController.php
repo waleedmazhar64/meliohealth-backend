@@ -27,6 +27,20 @@ class NoteController extends Controller
         $data['user_id'] = $request->user()->id;
         return Note::create($data);
     }
+
+    public function AIstore(Request $request)
+    {
+        $request->validate([
+            'text' => 'required|string'
+        ]);
+    
+        $note = new Note();
+        $note->user_id = auth()->id();
+        $note->ai_notes = $request->text;
+        $note->save();
+    
+        return response()->json(['message' => 'Note saved successfully.']);
+    }
     
     public function destroy($id) {
         Note::findOrFail($id)->delete();

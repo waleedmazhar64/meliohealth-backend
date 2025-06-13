@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use Log;
 
 class ProfileController extends Controller
 {
@@ -120,5 +122,31 @@ class ProfileController extends Controller
 
           return response()->json(['message' => 'Active card updated']);
       }
+
+    public function transcribe(Request $request)
+    {
+       // return response()->json(env('OPENAI_API_KEY'));
+        $request->validate([
+            'audio' => 'required|file|mimes:webm,wav,mp3,m4a'
+        ]);
+
+        $filePath = $request->file('audio')->getPathname();
+        $fileMime = $request->file('audio')->getMimeType();
+
+        $response = Http::withToken(env('OPENAI_API_KEY'))
+            ->attach('file', file_get_contents($filePath), 'audio.webm')
+            ->withOptions(['verify' => false])
+            ->post('https://api.openai.com/v1/audio/transcriptions', [
+                'model' => 'whisper-1',
+                'language' => 'en'
+            ]);
+
+        if ($response->successful()) {
+            return response()->json(['text' => $response['text']]);
+        } else {
+            Log::error('Whisper API error: ' . $response->body());
+            return response()->json(['error' => 'Transcription failed'], 500);
+        }
+    }
 
 }

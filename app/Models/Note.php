@@ -15,5 +15,6 @@ class Note extends Model
         'bp',
         'oxygen',
         'observation',
+        'ai_notes'
     ];
 }

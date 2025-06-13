@@ -27,6 +27,7 @@ Route::middleware(['auth:api'])->group(function () {
     //Patient Dashboard
     Route::get('/notes', [NoteController::class, 'index']);
     Route::post('/notes', [NoteController::class, 'store']);
+    Route::post('/ai-notes', [NoteController::class, 'AIstore']);
     Route::delete('/notes/{id}', [NoteController::class, 'destroy']);
     Route::post('/notes/{id}/email', [NoteController::class, 'sendEmail']);
     Route::get('/notes/{id}/download', [NoteController::class, 'download']);
@@ -43,6 +44,8 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/cards', [ProfileController::class, 'storeCard']);
     Route::post('/cards/{id}/activate', [ProfileController::class, 'setActiveCard']);
 
+
+    Route::post('/transcribe', [ProfileController::class, 'transcribe']);
 
 });
 

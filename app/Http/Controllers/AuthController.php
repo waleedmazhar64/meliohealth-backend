@@ -40,7 +40,7 @@ class AuthController extends Controller
             'is_verified' => false,
         ]);
 
-        //$user->notify(new OtpCode($otp));
+        $user->notify(new OtpCode($otp));
 
         return response()->json(['message' => 'OTP sent to your email for verification.']);
     }
