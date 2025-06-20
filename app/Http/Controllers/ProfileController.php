@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use Log;
+use App\Models\Note;
 
 class ProfileController extends Controller
 {
@@ -123,7 +124,7 @@ class ProfileController extends Controller
           return response()->json(['message' => 'Active card updated']);
       }
 
-    public function transcribe(Request $request)
+    public function transcribeOld(Request $request)
     {
        // return response()->json(env('OPENAI_API_KEY'));
         $request->validate([
@@ -149,4 +150,85 @@ class ProfileController extends Controller
         }
     }
 
+    public function transcribe(Request $request)
+    {
+        $request->validate([
+            'audio' => 'required|file|mimes:webm,mp3,wav'
+        ]);
+
+        // Step 1: Transcribe using Whisper API
+        $whisperResponse = Http::withToken(env('OPENAI_API_KEY'))
+            ->attach('file', fopen($request->file('audio')->getRealPath(), 'r'), 'recording.webm')
+            ->withOptions(['verify' => false])
+            ->post('https://api.openai.com/v1/audio/transcriptions', [
+                'model' => 'whisper-1',
+                'language' => 'en'
+            ]);
+
+        if (!$whisperResponse->successful()) {
+            return response()->json([
+                'message' => 'Transcription failed',
+                'error' => $whisperResponse->json()
+            ], 500);
+        }
+
+        $transcribedText = $whisperResponse['text'];
+
+        // Step 2: Format into SOAP Note using GPT-4
+        $gptResponse = Http::withToken(env('OPENAI_API_KEY'))
+        ->withOptions(['verify' => false])
+        ->post('https://api.openai.com/v1/chat/completions', [
+            'model' => 'gpt-4o',
+            'messages' => [
+                [
+                    'role' => 'system',
+                    'content' => 'You are a medical assistant that generates SOAP-format clinical notes from patient speech.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => <<<EOT
+    Transcription:
+
+    {$transcribedText}
+
+    Please format this into a clinical SOAP note.
+
+    - Include all sections: S – Subjective, O – Objective, A – Assessment, P – Plan.
+    - Use realistic formatting and line breaks.
+    - For A and P, always include this exact line:  
+    **(To be completed by provider)**
+
+    Format it like:
+
+    S – Subjective  
+    O – Objective  
+    A – Assessment  
+    P – Plan
+    EOT
+                ]
+            ],
+            'temperature' => 0.4
+        ]);
+
+
+        if (!$gptResponse->successful()) {
+            return response()->json([
+                'message' => 'GPT formatting failed',
+                'error' => $gptResponse->json()
+            ], 500);
+        }
+
+        $soapNote = $gptResponse['choices'][0]['message']['content'];
+
+        // Step 3: Save to database
+        $note = new Note();
+        $note->user_id = auth()->id(); // or $request->user()->id if using token auth
+        $note->ai_notes = $soapNote;
+        $note->save();
+
+        return response()->json([
+            'message' => 'SOAP note generated and saved successfully.',
+            'text' => $soapNote
+        ]);
+    }
 }
