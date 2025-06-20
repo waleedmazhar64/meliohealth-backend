@@ -37,7 +37,10 @@ class NoteController extends Controller
         $note = new Note();
         $note->user_id = auth()->id();
         $note->ai_notes = $request->text;
+        $note->patient_name = $request->patient_name;
+        $note->dob = $request->dob;
         $note->save();
+        
     
         return response()->json(['message' => 'Note saved successfully.']);
     }

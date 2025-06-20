@@ -221,10 +221,12 @@ class ProfileController extends Controller
         $soapNote = $gptResponse['choices'][0]['message']['content'];
 
         // Step 3: Save to database
-        $note = new Note();
+        /*$note = new Note();
         $note->user_id = auth()->id(); // or $request->user()->id if using token auth
         $note->ai_notes = $soapNote;
-        $note->save();
+        $note->patient_name = $request->patient_name;
+        $note->dob = $request->dob;
+        $note->save();*/
 
         return response()->json([
             'message' => 'SOAP note generated and saved successfully.',
