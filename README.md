@@ -40,7 +40,6 @@ The backend provides secure APIs, authentication, patient record management, and
     ```bash
    php artisan serve
 
-
 **API Endpoints**
 
 POST /api/register → User registration (patients/admins)
