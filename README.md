@@ -27,14 +27,17 @@ The backend provides secure APIs, authentication, patient record management, and
    cd meliohealth-backend
 
 2. Install dependencies:
+    ```bash
    composer install
 
-3. Copy .env.example to .env and configure database + API keys.
+4. Copy .env.example to .env and configure database + API keys.
+    ```bash
    php artisan key:generate
    php artisan migrate
    php artisan passport:install
 
-4. Run the server:
+6. Run the server:
+    ```bash
    php artisan serve
 
 
